@@ -1,0 +1,33 @@
+{
+    "editions": [
+        {
+            "code": "/*\n\tAvailable uniforms:\n\n\t\t// mm_ModulationColor contains red, green, blue levels & surface opacity in alpha\n\t\t// The multiplication in the fragment shader is done by MadMapper, so you shouldn't need that\n\t\tuniform vec4 mm_ModulationColor;\n\n\t\t// Blend Mode, see possible values in Definitions below. This is handled by default by MadMapper so you should need it\n\t\tuniform int mm_BlendMode;\n\n\t\t// Used to know if we're rendering to the preview or to an output fullscreen / desktop window / syphon-spout-NDI\n\t\tuniform bool mm_IsRenderingPreview;\n\n\t\t// The index of the surface in the project (not recommended to use that)\n\t\tuniform int mm_SurfaceIndex;\n\n\tAvailable inputs:\n\n\t\t// The normalized texture coordinate for this pixel. Should be accessed with \"vec4 FX_NORM_PIXEL(vec2 uv)\"\n\t\tin vec2 mm_FragNormCoord;\n\n\t    // Normalized position of this vertex in the surface output geometry (independent of input rectangle)\n\t\tin vec2 mm_SurfaceCoord;\n\n\t\t// Alpha of this point generated from surface / mask feathering. This is automatically handled by MadMapper and\n\t\t// should not be used in an FX\n\t\tin float mm_Alpha;\n\n\n\tMain Fragment Shader calls fxColorForPixel(...) and then apply modulation color and transparency (feathering / masking),\n\tthen might adjust color depending on blending mode / highlight selection...\n\n*/\n\n/*{\n    \"CREDIT\": \"MadTeam\",\n    \"TAGS\": [\"graphics\"],\n    \"VSN\": 1.0,\n    \"DESCRIPTION\": \"Describe your FX here\",\n    \"MEDIA\": {\n        \"REQUIRES_TEXTURE\": false,\n        \"GL_TEXTURE_MIN_FILTER\": \"LINEAR\",\n        \"GL_TEXTURE_MAG_FILTER\": \"LINEAR\",\n        \"GL_TEXTURE_WRAP\": \"CLAMP_TO_EDGE\",\n    },\n    \"INPUTS\": [\n        { \"LABEL\": \"Speed\", \"NAME\": \"fx_speed\", \"TYPE\": \"float\", \"DEFAULT\": 0.1, \"MIN\": 0.0, \"MAX\": 1.0 },\n    ],\n    \"GENERATORS\": [\n        {\"NAME\": \"fx_time\", \"TYPE\": \"time_base\", \"PARAMS\": {\"speed\": \"fx_speed\", \"speed_curve\": 2, \"link_speed_to_global_bpm\":true}},\n    ]\n}*/\n\nvec4 fxColorForPixel(vec2 mm_FragNormCoord)\n{\n\tvec2 uv;\n\tuv.x = fract(mm_FragNormCoord.x+fx_time);\n\tuv.y = mm_FragNormCoord.y;\n    return FX_NORM_PIXEL(uv);\n}\n",
+            "isPrompt": false,
+            "madness": 0.5,
+            "mode": "",
+            "title": "New"
+        },
+        {
+            "code": "/*{\n  \"RESOURCE_TYPE\": \"Surface 2D FX For MadMapper\",\n  \"CREDIT\": \"Made with MadAI\",\n  \"DESCRIPTION\": \"Checker board pattern\",\n  \"TAGS\": \"pattern,geometric\",\n  \"VSN\": \"1.0\",\n  \"INPUTS\": [\n    { \"LABEL\": \"Size/Scale\", \"NAME\": \"fx_scale\", \"TYPE\": \"float\", \"DEFAULT\": 10.0, \"MIN\": 1.0, \"MAX\": 50.0 },\n    { \"LABEL\": \"Size/Ratio\", \"NAME\": \"fx_ratio\", \"TYPE\": \"float\", \"DEFAULT\": 1.0, \"MIN\": 0.1, \"MAX\": 10.0 },\n    { \"LABEL\": \"Offset/X\", \"NAME\": \"fx_offset_x\", \"TYPE\": \"float\", \"DEFAULT\": 0.0, \"MIN\": -1.0, \"MAX\": 1.0 },\n    { \"LABEL\": \"Offset/Y\", \"NAME\": \"fx_offset_y\", \"TYPE\": \"float\", \"DEFAULT\": 0.0, \"MIN\": -1.0, \"MAX\": 1.0 }\n  ]\n}*/\n\nvec2 f_adjustUV(vec2 p_uv) {\n    float v_aspectRatio = FX_IMG_SIZE().x / FX_IMG_SIZE().y;\n    p_uv.x *= v_aspectRatio;\n    return p_uv;\n}\n\nfloat f_checker(vec2 p_uv) {\n    p_uv = f_adjustUV(p_uv);\n    p_uv *= fx_scale;\n    p_uv.x *= fx_ratio;\n    p_uv += vec2(fx_offset_x, fx_offset_y) * fx_scale;\n    vec2 v_grid = floor(p_uv);\n    return mod(v_grid.x + v_grid.y, 2.0);\n}\n\nvec4 fxColorForPixel(vec2 mm_FragNormCoord) {\n    vec4 v_color = FX_NORM_PIXEL(mm_FragNormCoord);\n    float v_pattern = f_checker(mm_FragNormCoord);\n    return v_color * v_pattern;\n}",
+            "isPrompt": true,
+            "madness": 0.5,
+            "mode": "Faster",
+            "title": "fait moi un checker board"
+        },
+        {
+            "code": "/*{\n  \"RESOURCE_TYPE\": \"Surface 2D FX For MadMapper\",\n  \"CREDIT\": \"Made with MadAI\",\n  \"DESCRIPTION\": \"Simple checker board pattern\",\n  \"TAGS\": \"pattern,geometric\",\n  \"VSN\": \"1.0\",\n  \"INPUTS\": [\n    { \"LABEL\": \"Size/Scale\", \"NAME\": \"fx_scale\", \"TYPE\": \"float\", \"DEFAULT\": 20.0, \"MIN\": 1.0, \"MAX\": 100.0 }\n  ]\n}*/\n\nvec4 fxColorForPixel(vec2 mm_FragNormCoord) {\n    vec2 v_coord = mm_FragNormCoord * FX_IMG_SIZE() * fx_scale;\n    float v_pattern = mod(floor(v_coord.x) + floor(v_coord.y), 2.0);\n    return vec4(v_pattern, v_pattern, v_pattern, 1.0);\n}",
+            "isPrompt": true,
+            "madness": 0.5,
+            "mode": "Faster",
+            "title": "avec ça -> x = mod(gl_frag_coord.x + gl_frag_coord.y, 2 );\noutput = vec4(x,x,x,1);\n"
+        },
+        {
+            "code": "/*{\n  \"RESOURCE_TYPE\": \"Surface 2D FX For MadMapper\",\n  \"CREDIT\": \"Made with MadAI\",\n  \"DESCRIPTION\": \"Simple checker board pattern\",\n  \"TAGS\": \"pattern,geometric\",\n  \"VSN\": \"1.0\",\n  \"INPUTS\": [\n    { \"LABEL\": \"Size/Scale\", \"NAME\": \"fx_scale\", \"TYPE\": \"float\", \"DEFAULT\": 20.0, \"MIN\": -100.0, \"MAX\": 100.0 }\n  ]\n}*/\n\nvec4 fxColorForPixel(vec2 mm_FragNormCoord) {\n    vec2 v_coord = mm_FragNormCoord * FX_IMG_SIZE() * fx_scale;\n    float v_pattern = mod(floor(v_coord.x) + floor(v_coord.y), 2.0);\n    return vec4(v_pattern, v_pattern, v_pattern, 1.0);\n}",
+            "isPrompt": true,
+            "madness": 0.5,
+            "mode": "Faster",
+            "title": "met le scale de -100 à 100\n"
+        }
+    ],
+    "index": 3
+}
